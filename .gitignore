@@ -1,0 +1,11 @@
+# Ignore everything
+*
+# Whitelist
+!includes
+!/includes/**
+!/src
+!/src/**
+!/unittests
+!/unittests/**
+!Makefile
+!.gitignore
