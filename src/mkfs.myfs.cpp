@@ -19,12 +19,8 @@
 int main(int argc, char *argv[]) {
     // TODO: Implement file system generation & copying of files here
     BlockDevice *device = new BlockDevice();
-    
-    
-    
+
     //Erstellt neues device mit path  der im Terminal übergeben wird
     device->create(argv[1]);
-    
-    
     return 0;
 }
