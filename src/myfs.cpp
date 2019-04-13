@@ -15,6 +15,9 @@
 #define DEBUG_METHODS
 #define DEBUG_RETURN_VALUES
 
+#include <errno.h>
+#include <string>
+
 #include "macros.h"
 
 #include "myfs.h"
@@ -180,8 +183,23 @@ int MyFS::fuseReaddir(const char *path, void *buf, fuse_fill_dir_t filler, off_t
     LOGM();
     
     // TODO: Implement this!
-    
-    RETURN(0);
+    if (strcmp("/", path) == 0) {
+        for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
+            if (rootDir.exists(i)) {
+                struct stat s = {};
+                char* name;
+                rootDir.getName(i, &name);
+                fuseGetattr(name, &s);
+                filler(buf, name, &s, 0);
+            }
+        }
+        filler(buf, "..", NULL, 0);
+        
+        RETURN(0);
+    } else {
+        errno = ENOTDIR;
+        RETURN(-errno);
+    }
     
     // <<< My new code
 }
