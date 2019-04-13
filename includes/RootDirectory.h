@@ -17,17 +17,17 @@
 
 class RootDirectory {
 private:
-    fileStats *rootArray = new fileStats[ROOT_ARRAY_SIZE];
+    fileInfo *rootArray = new fileInfo[ROOT_ARRAY_SIZE];
 public:
     RootDirectory();
     ~RootDirectory();
-    void getAll(fileStats* filestats);
-    void setAll(fileStats* filestats);
+    void getAll(fileInfo* fileInfo);
+    void setAll(fileInfo* fileInfo);
 
     //Methods with filename:
 
-    int get(const char* name, fileStats* filestats);
-    int update(fileStats filestats);
+    int get(const char* name, fileInfo* fileInfo);
+    int update(fileInfo fileInfo);
     int deleteEntry(const char* name);
     int createEntry(const char* name, mode_t mode);
     int createEntry(const char* name);
@@ -35,7 +35,7 @@ public:
 
     //Methods with position(--> file descriptor):
 
-    int get(int num, fileStats* filestats);
+    int get(int num, fileInfo* fileInfo);
     int set(int num, char* filePath);
     bool exists(int index);
     int getName(int index, char** name);

@@ -1,23 +1,22 @@
 #include <errno.h>
 
 #include "myfs-structs.h"
-#include "root.h"
+#include "RootDirectory.h"
 
 
-//create new empty filestats Array
+//create new empty fileInfo Array
 RootDirectory::RootDirectory() {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         rootArray[i].size = -1;
     }
     DIR_STATS = {};
     strcpy(DIR_STATS.name, ".");
-    DIR_STATS.mode = S_IFDIR | 0775;
+    DIR_STATS.readWriteExecuteRighs = S_IFDIR | 0775;
     DIR_STATS.userID = geteuid();
     DIR_STATS.groupID = getegid();
     time_t currentTime = time(NULL);
-    DIR_STATS.last_time = currentTime;
-    DIR_STATS.change_time = currentTime;
-    DIR_STATS.modi_time = currentTime;
+    DIR_STATS.lastAccess = currentTime;
+    DIR_STATS.lastChange = currentTime;
     DIR_STATS.nlink = 2;
 }
 
@@ -25,21 +24,21 @@ RootDirectory::~RootDirectory() {
     delete[] rootArray;
 }
 
-//return full filestats array (for writing to hard driver)
-void RootDirectory::getAll(fileStats* filestats) {
+//return full fileInfo array (for writing to hard driver)
+void RootDirectory::getAll(fileInfo* fileInfo) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
-        *(filestats + i) = rootArray[i];
+        *(fileInfo + i) = rootArray[i];
     }
 }
 
-//set filestats array (for reading from hard driver)
-void RootDirectory::setAll(fileStats* filestats) {
+//set fileInfo array (for reading from hard driver)
+void RootDirectory::setAll(fileInfo* fileInfo) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++){
-        rootArray[i] = *(filestats + i);
+        rootArray[i] = *(fileInfo + i);
     }
 }
 
-// deletes the filestats with the given name.
+// deletes the fileInfo with the given name.
 int RootDirectory::deleteEntry(const char *name) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, name) == 0) {
@@ -67,17 +66,16 @@ int RootDirectory::createEntry(const char *name, mode_t mode) {
     }
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         if (rootArray[i].size < 0) {
-            fileStats stats = {};
+            fileInfo stats = {};
             strcpy(stats.name, name);
             stats.userID = geteuid();
             stats.groupID = getegid();
             time_t currentTime = time(NULL);
-            stats.modi_time = currentTime;
-            stats.last_time = currentTime;
-            stats.change_time = currentTime;
-            stats.mode = S_IFREG | mode; // regular file
+            stats.lastAccess = currentTime;
+            stats.lastChange = currentTime;
+            stats.readWriteExecuteRighs = S_IFREG | mode; // regular file
             stats.nlink = 1;
-            stats.first_block = FAT_TERMINATOR;
+            stats.firstBlock = FAT_TERMINATOR;
             rootArray[i] = stats;
             return 0;
         }
@@ -106,11 +104,11 @@ int RootDirectory::rename(const char *oldname, const char *newname) {
     return -1;
 }
 
-// get the filestats of the given file, returns a number that can be used as a file descriptor
-int RootDirectory::get(const char* name, fileStats* filestats) {
+// get the fileInfo of the given file, returns a number that can be used as a file descriptor
+int RootDirectory::get(const char* name, fileInfo* fileInfo) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, name) == 0) {
-            *filestats = rootArray[i];
+            *fileInfo = rootArray[i];
             return i;
         }
     }
@@ -118,13 +116,13 @@ int RootDirectory::get(const char* name, fileStats* filestats) {
     return -1;
 }
 
-// set the filestats of the given file to the given values, if it exists (names are compared).
-int RootDirectory::update(fileStats filestats) {
+// set the fileInfo of the given file to the given values, if it exists (names are compared).
+int RootDirectory::update(fileInfo fileInfo) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
-        if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, filestats.name) == 0) {
+        if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, fileInfo.name) == 0) {
             DIR_STATS.size -= rootArray[i].size;
-            DIR_STATS.size += filestats.size;
-            rootArray[i] = filestats;
+            DIR_STATS.size += fileInfo.size;
+            rootArray[i] = fileInfo;
             return 0;
         }
     }
@@ -133,10 +131,10 @@ int RootDirectory::update(fileStats filestats) {
 }
 
 
-//return filestats of the file under given number
-int RootDirectory::get(int index, fileStats* filestats) {
+//return fileInfo of the file under given number
+int RootDirectory::get(int index, fileInfo* fileInfo) {
     if (index < ROOT_ARRAY_SIZE) {
-        *filestats = rootArray[index];
+        *fileInfo = rootArray[index];
         return 0;
     }
     return -1;
@@ -166,7 +164,7 @@ int RootDirectory::getName(int index, char** name) {
     }
 }
 
-//get filestats info from new file and add it to given position
+//get fileInfo info from new file and add it to given position
 //in array
 int RootDirectory::set(int num, char* filePath) {
     struct stat sb;
@@ -175,14 +173,14 @@ int RootDirectory::set(int num, char* filePath) {
     if (strlen(filename) > NAME_LENGTH) {
         return -1;
     }
-    fileStats* status = new fileStats;
+    fileInfo* status = new fileInfo;
     strcpy(status->name, filename);
     status->size = sb.st_size;
     status->userID = geteuid();
     status->groupID = getegid();
-    status->modi_time = sb.st_mtime;
-    time(&(status->last_time));
-    time(&(status->change_time));
+    status->lastChange = sb.st_mtime;
+    time(&(status->lastAccess));
+    time(&(status->lastChange));
     rootArray[num] = *status;
 
     delete status;

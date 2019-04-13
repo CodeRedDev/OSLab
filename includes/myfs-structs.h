@@ -39,18 +39,21 @@ typedef struct{
 
 typedef struct{
 
-    std::string name;
+    char name[NAME_LENGTH];
     size_t size;
 
     uid_t userID;
     gid_t groupID;
 
-    time_t lastAccess
+    time_t lastAccess;
     time_t lastChange;
 
     uint16_t firstBlock;
 
     mode_t readWriteExecuteRighs;
+
+    nlink_t nlink;
+
 
 } fileInfo;
 

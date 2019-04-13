@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     DMap dMap = DMap();
     RootDirectory rootDir = RootDirectory();
     
-    fileStats* rootArray = new fileStats[ROOT_ARRAY_SIZE];
+    fileInfo* rootArray = new fileInfo[ROOT_ARRAY_SIZE];
     rootDir.getAll(rootArray);
     
     if (argc > 1) {
