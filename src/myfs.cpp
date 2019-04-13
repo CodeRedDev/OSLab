@@ -324,10 +324,10 @@ int MyFS::fuseGetxattr(const char *path, const char *name, char *value, size_t s
 /**
  * Initializes our Filesystem with the content of the given containerFile
  *
- * @param containerFile
+ * @param char* containerFile
  * @return int
  */
-int MyFS::initializeFilesystem(char *containerFile) {
+int MyFS::initializeFilesystem(char* containerFile) {
     if (blockDevice->open(containerFile) == 0) {
         bool *dMapBlocks = new bool[DATA_BLOCKS];
         FileInfo *rootArray = new FileInfo[ROOT_ARRAY_SIZE];
@@ -372,10 +372,10 @@ int MyFS::initializeFilesystem(char *containerFile) {
         delete[] rootArray;
 
         for (int i = 0; i < NUM_OPEN_FILES; i++) {
-            openFiles[i].rootIndex = -1;
-            openFiles[i].read = false;
-            openFiles[i].write = false;
-            openFiles[i].bufferBlockNumber = FAT_TERMINATOR;
+            this->openFiles[i].rootIndex = -1;
+            this->openFiles[i].read = false;
+            this->openFiles[i].write = false;
+            this->openFiles[i].bufferBlockNumber = FAT_TERMINATOR;
         }
 
         LOG("Successfully initialized the filesystem")
