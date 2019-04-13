@@ -40,7 +40,7 @@ typedef struct{
 typedef struct{
 
     char name[NAME_LENGTH];
-    size_t size;
+    off_t size;
 
     uid_t userID;
     gid_t groupID;
@@ -55,6 +55,6 @@ typedef struct{
     nlink_t nlink;
 
 
-} fileInfo;
+} FileInfo;
 
 #endif /* myfs_structs_h */

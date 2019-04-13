@@ -18,6 +18,10 @@ int Fat::setNextBlock(uint16_t currentBlock, uint16_t nextBlock) {
     return 0;
 }
 
+void Fat::setEndOfFile(uint16_t block) {
+    fatList[block] = FAT_EOF;
+}
+
 uint16_t Fat::getNextBlock(uint16_t currentBlock) {
     return this->fatList[currentBlock];
 }

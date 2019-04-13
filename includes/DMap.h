@@ -26,7 +26,7 @@ public:
     void freeBlock(uint16_t blockNo);
     void setBlockUsed(uint16_t blockNo);
 
-    int getAFreeBlock();
+    uint16_t getAFreeBlock();
 
     bool* getDMap();
     void setDMap(bool* dMapArray);

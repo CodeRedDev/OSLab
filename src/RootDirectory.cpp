@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <iostream>
 
 #include "myfs-structs.h"
 #include "RootDirectory.h"
@@ -25,14 +26,14 @@ RootDirectory::~RootDirectory() {
 }
 
 //return full fileInfo array (for writing to hard driver)
-void RootDirectory::getAll(fileInfo* fileInfo) {
+void RootDirectory::getAll(FileInfo* fileInfo) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         *(fileInfo + i) = rootArray[i];
     }
 }
 
 //set fileInfo array (for reading from hard driver)
-void RootDirectory::setAll(fileInfo* fileInfo) {
+void RootDirectory::setAll(FileInfo* fileInfo) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++){
         rootArray[i] = *(fileInfo + i);
     }
@@ -66,7 +67,7 @@ int RootDirectory::createEntry(const char *name, mode_t mode) {
     }
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         if (rootArray[i].size < 0) {
-            fileInfo stats = {};
+            FileInfo stats = {};
             strcpy(stats.name, name);
             stats.userID = geteuid();
             stats.groupID = getegid();
@@ -75,7 +76,7 @@ int RootDirectory::createEntry(const char *name, mode_t mode) {
             stats.lastChange = currentTime;
             stats.readWriteExecuteRighs = S_IFREG | mode; // regular file
             stats.nlink = 1;
-            stats.firstBlock = FAT_TERMINATOR;
+            stats.firstBlock = FAT_EOF;
             rootArray[i] = stats;
             return 0;
         }
@@ -105,7 +106,7 @@ int RootDirectory::rename(const char *oldname, const char *newname) {
 }
 
 // get the fileInfo of the given file, returns a number that can be used as a file descriptor
-int RootDirectory::get(const char* name, fileInfo* fileInfo) {
+int RootDirectory::get(const char* name, FileInfo* fileInfo) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, name) == 0) {
             *fileInfo = rootArray[i];
@@ -117,7 +118,7 @@ int RootDirectory::get(const char* name, fileInfo* fileInfo) {
 }
 
 // set the fileInfo of the given file to the given values, if it exists (names are compared).
-int RootDirectory::update(fileInfo fileInfo) {
+int RootDirectory::update(FileInfo fileInfo) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, fileInfo.name) == 0) {
             DIR_STATS.size -= rootArray[i].size;
@@ -132,7 +133,7 @@ int RootDirectory::update(fileInfo fileInfo) {
 
 
 //return fileInfo of the file under given number
-int RootDirectory::get(int index, fileInfo* fileInfo) {
+int RootDirectory::get(int index, FileInfo* fileInfo) {
     if (index < ROOT_ARRAY_SIZE) {
         *fileInfo = rootArray[index];
         return 0;
@@ -173,7 +174,7 @@ int RootDirectory::set(int num, char* filePath) {
     if (strlen(filename) > NAME_LENGTH) {
         return -1;
     }
-    fileInfo* status = new fileInfo;
+    FileInfo* status = new FileInfo;
     strcpy(status->name, filename);
     status->size = sb.st_size;
     status->userID = geteuid();

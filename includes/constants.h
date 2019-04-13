@@ -10,6 +10,7 @@
 #define NUM_DIR_ENTRIES 64
 #define NUM_OPEN_FILES 64
 #define DATA_BLOCKS 62500
+#define FAT_EOF -1
 
 /**
  * How to get component block size/count. Example for FAT:
@@ -36,7 +37,7 @@
 
 #define SUPERBLOCK_START 0
 #define FAT_START (SUPERBLOCK_START + SUPERBLOCK_SIZE)
-#define DMAP_START (FATSTART + FAT_SIZE)
+#define DMAP_START (FAT_START + FAT_SIZE)
 #define ROOTDIR_START (DMAP_START + DMAP_SIZE)
 #define DATA_START (ROOTDIR_START + ROOTDIR_SIZE)
 
