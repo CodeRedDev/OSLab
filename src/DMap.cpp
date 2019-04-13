@@ -55,7 +55,7 @@ void DMap::setBlock(uint16_t blockNo, bool free) {
     this->blocks[blockNo] = free;
 }
 
-int DMap::getAFreeBlock() {
+uint16_t DMap::getAFreeBlock() {
     if (this->firstFreeBlock < DATA_BLOCKS) {
         return this->firstFreeBlock;
     } else {
