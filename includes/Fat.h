@@ -16,7 +16,7 @@ public:
     int setNextBlock(uint16_t currentBlock, uint16_t nextBlock);
     uint16_t getNextBlock(uint16_t currentBlock);
     std::vector<uint16_t> getAssociatedBlocks(uint16_t startBlock);
-    // TODO: getAll() setAll()?
+    uint16_t* getFatList();
 }
 
 #endif

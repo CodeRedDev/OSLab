@@ -12,11 +12,7 @@
 
 #include <stdlib.h>
 #include <string>
-
-#define NAME_LENGTH 255
-#define BLOCK_SIZE 512
-#define NUM_DIR_ENTRIES 64
-#define NUM_OPEN_FILES 64
+#include "constants.h"
 
 // TODO: Add structures of your file system here
 

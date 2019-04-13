@@ -5,7 +5,10 @@
  * Put all constant values here that define the file systems behaviour.
  */
 
+#define NAME_LENGTH 255
 #define BLOCK_SIZE 512
+#define NUM_DIR_ENTRIES 64
+#define NUM_OPEN_FILES 64
 #define DATA_BLOCKS 62500
 
 /**

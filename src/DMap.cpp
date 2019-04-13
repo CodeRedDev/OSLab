@@ -64,8 +64,8 @@ int DMap::getAFreeBlock() {
     }
 }
 
-bool *DMap::getDMap() {
-    return blocks;
+bool* DMap::getDMap() {
+    return this->blocks;
 }
 
 void DMap::setDMap(bool *dMapArray) {
