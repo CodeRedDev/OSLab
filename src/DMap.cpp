@@ -10,19 +10,19 @@
 #include <iostream>
 
 DMap::DMap() {
-    for (int i = 0; i < DATA_BLOCKS + 1; i++){
+    for (int i = 0; i < DATA_BLOCKS + 1; i++) {
         this->blocks[i] = true;
     }
     this->firstFreeBlock = 0;
 }
 
-bool DMap::isBlockFree(uint16_t blockNo){
+bool DMap::isBlockFree(uint16_t blockNo) {
     return this->blocks[blockNo];
 }
 
 uint16_t DMap::getNextFreeBlock(uint16_t startBlock) {
-    for(int i = startBlock; i < DATA_BLOCKS; i++){
-        if(this->isBlockFree(i)){
+    for (int i = startBlock; i < DATA_BLOCKS; i++) {
+        if (this->isBlockFree(i)) {
             return (uint16_t) i;
         }
     }
@@ -31,7 +31,7 @@ uint16_t DMap::getNextFreeBlock(uint16_t startBlock) {
 
 void DMap::freeBlock(uint16_t blockNo) {
     this->setBlock(blockNo, true);
-    if(blockNo < this->firstFreeBlock){
+    if (blockNo < this->firstFreeBlock) {
         this->firstFreeBlock = blockNo;
     }
 }
@@ -39,12 +39,12 @@ void DMap::freeBlock(uint16_t blockNo) {
 void DMap::setBlockUsed(uint16_t blockNo) {
     this->setBlock(blockNo, false);
 
-    if(blockNo == this->firstFreeBlock){
-        for(int i = blockNo; i < DATA_BLOCKS; i++){
-            if(this->blocks[i]){
+    if (blockNo == this->firstFreeBlock) {
+        for (int i = blockNo; i < DATA_BLOCKS; i++) {
+            if (this->blocks[i]) {
                 this->firstFreeBlock = (uint16_t) i;
                 break;
-            }else if( !this->blocks[i] && i == DATA_BLOCKS){
+            } else if (!this->blocks[i] && i == DATA_BLOCKS) {
                 this->firstFreeBlock = (uint16_t) DATA_BLOCKS;
             }
         }
@@ -56,24 +56,21 @@ void DMap::setBlock(uint16_t blockNo, bool free) {
 }
 
 int DMap::getAFreeBlock() {
-    if (this->firstFreeBlock < DATA_BLOCKS){
+    if (this->firstFreeBlock < DATA_BLOCKS) {
         return this->firstFreeBlock;
-    }else{
+    } else {
         errno = ENOSPC;
         return -1;
     }
 }
 
-bool* DMap::getDMap() {
+bool *DMap::getDMap() {
     return blocks;
 }
 
-void DMap::setDMap(bool * dMapArray) {
-    for(int i = 0; i < DATA_BLOCKS; i++){
+void DMap::setDMap(bool *dMapArray) {
+    for (int i = 0; i < DATA_BLOCKS; i++) {
         this->blocks[i] = *(dMapArray + i);
     }
     this->firstFreeBlock = this->getNextFreeBlock(0);
 }
-
-
-

@@ -22,10 +22,10 @@ uint16_t Fat::getNextBlock(uint16_t currentBlock) {
     return this->fatList[currentBlock];
 }
 
-std::vector<uint16_t> Fat::getAssociatedBlocks(uint16_t startBlock) {
-    std::vector<uint16_t> blocks{startBlock};
+std::vector <uint16_t> Fat::getAssociatedBlocks(uint16_t startBlock) {
+    std::vector <uint16_t> blocks{startBlock};
     uint16_t currentBlock = startBlock;
-    
+
     while (this->getNextBlock(currentBlock) != FAT_EOF) {
         blocks.push_back(getNextBlock(currentBlock));
         currentBlock = this->getNextBlock(currentBlock);
