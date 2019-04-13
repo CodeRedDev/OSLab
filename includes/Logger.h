@@ -6,10 +6,10 @@
 #include <iostream>
 
 class Logger {
-public:
-    static bool debug = false;
-    static void log(char* message, int ret);
-};
+    public:
+        static void log(int ret, char *errorPlace, int errno);
 
+        static bool debug;
+};
 
 #endif //LOGGER_H
