@@ -49,10 +49,10 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
 
     const char* filename = path;
 
-    if(*path == '/'){
-        if(std::strlen(path) == 1){
+    if (*path == '/') {
+        if (strlen(path) == 1) {
             filename = ".";
-        }else{
+        } else {
             filename++;
         }
     }
@@ -189,7 +189,7 @@ int MyFS::fuseRelease(const char *path, struct fuse_file_info *fileInfo) {
         RETURN(-errno);
     }
     if (openFiles[fileInfo->fh].rootIndex >= 0) {
-        openFiles[fileInfo->fh].rootInedx = -1;
+        openFiles[fileInfo->fh].rootIndex = -1;
         openFiles[fileInfo->fh].read = false;
         openFiles[fileInfo->fh].write = false;
         openFiles[fileInfo->fh].bufferBlockNumber = FAT_EOF;
@@ -330,52 +330,40 @@ int MyFS::fuseGetxattr(const char *path, const char *name, char *value, size_t s
 int MyFS::initializeFilesystem(char *containerFile) {
     if (blockDevice->open(containerFile) == 0) {
         bool *dMapBlocks = new bool[DATA_BLOCKS];
-        FileInfo *rootArray = new FileInfo[ROOT_ARRAY_SIZE];
         uint16_t *fatList = new uint16_t[DATA_BLOCKS];
+        FileInfo *rootArray = new FileInfo[ROOT_ARRAY_SIZE];
 
         int ret = 0;
         ret = this->blockDeviceHelper.readDevice(SUPERBLOCK_START, &this->superBlock, sizeof(this->superBlock));
         if (ret < 0) {
             LOG("Error at blockdevice.read() (Reading superblock)");
-            LOGI(ret);
-            LOG("Errno:");
-            LOGI(errno);
         }
         ret = this->blockDeviceHelper.readDevice(DMAP_START, dMapBlocks, sizeof(*dMapBlocks) * (DATA_BLOCKS + 1) / 8);
         if (ret < 0) {
             LOG("Error at blockdevice.read() (Reading dmap)");
-            LOGI(ret);
-            LOG("Errno:");
-            LOGI(errno);
         }
-        ret = this->blockDeviceHelper.readDevice(FAT_START, fatList, sizeof(*fatArray) * DATA_BLOCKS);
+        ret = this->blockDeviceHelper.readDevice(FAT_START, fatList, sizeof(*fatList) * DATA_BLOCKS);
         if (ret < 0) {
             LOG("Error at blockdevice.read() (Reading fat)");
-            LOGI(ret);
-            LOG("Errno:");
-            LOGI(errno);
         }
-        ret = this->blockDeviceHelper.readDevice(ROOT_START, rootArray, sizeof(*rootArray) * ROOT_ARRAY_SIZE);
+        ret = this->blockDeviceHelper.readDevice(ROOTDIR_START, rootArray, sizeof(*rootArray) * ROOT_ARRAY_SIZE);
         if (ret < 0) {
             LOG("Error at blockdevice.read() (Reading root)");
-            LOGI(ret);
-            LOG("Errno:");
-            LOGI(errno);
         }
 
-        this->dMap.setDMap(dMapArray);
-        this->fat.setFat(fatArray);
+        this->dMap.setDMap(dMapBlocks);
+        this->fat.setFat(fatList);
         this->rootDir.setAll(rootArray);
 
-        delete[] dMapArray;
-        delete[] fatArray;
+        delete[] dMapBlocks;
+        delete[] fatList;
         delete[] rootArray;
 
         for (int i = 0; i < NUM_OPEN_FILES; i++) {
             this->openFiles[i].rootIndex = -1;
             this->openFiles[i].read = false;
             this->openFiles[i].write = false;
-            this->openFiles[i].bufferBlockNumber = FAT_TERMINATOR;
+            this->openFiles[i].bufferBlockNumber = -1;
         }
 
         LOG("Successfully initialized the filesystem");
