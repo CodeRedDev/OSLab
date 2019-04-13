@@ -57,4 +57,12 @@ typedef struct{
 
 } FileInfo;
 
+typedef struct {
+    int rootIndex;
+    bool read;
+    bool write;
+    uint16_t bufferBlockNumber; // block number in data section (without DATA_START)
+    char buffer[BLOCK_SIZE];
+} OpenFile;
+
 #endif /* myfs_structs_h */

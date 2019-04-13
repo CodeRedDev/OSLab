@@ -18,6 +18,7 @@
 #include "DMap.h"
 #include "RootDirectory.h"
 #include "BlockDeviceHelper.h"
+#include "Logger.h"
 
 class MyFS {
 private:

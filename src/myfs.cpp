@@ -251,7 +251,7 @@ void* MyFS::fuseInit(struct fuse_conn_info *conn) {
         // you can get the containfer file name here:
         LOGF("Container file name: %s", ((MyFsInfo *) fuse_get_context()->private_data)->contFile);
         
-        // TODO: Implement your initialization methods here!
+        this->initializeFilesystem(((MyFsInfo *) fuse_get_context()->private_data)->contFile);
     }
     
     RETURN(0);
@@ -276,5 +276,68 @@ int MyFS::fuseGetxattr(const char *path, const char *name, char *value, size_t s
 }
         
 // TODO: Add your own additional methods here!
-            
 
+/**
+ * Initializes our Filesystem with the content of the given containerFile
+ *
+ * @param containerFile
+ * @return int
+ */
+int MyFS::initializeFilesystem(char *containerFile) {
+    if (blockDevice->open(containerFile) == 0) {
+        bool *dMapBlocks = new bool[DATA_BLOCKS];
+        FileInfo *rootArray = new FileInfo[ROOT_ARRAY_SIZE];
+        uint16_t *fatList = new uint16_t[DATA_BLOCKS];
+
+        int ret = 0;
+        ret = this->blockDeviceHelper.readDevice(SUPERBLOCK_START, &this->superBlock, sizeof(this->superBlock));
+        if (ret < 0) {
+            LOG("Error at blockdevice.read() (Reading superblock)");
+            LOGI(ret);
+            LOG("Errno:");
+            LOGI(errno);
+        }
+        ret = this->blockDeviceHelper.readDevice(DMAP_START, dMapBlocks, sizeof(*dMapBlocks) * (DATA_BLOCKS + 1) / 8);
+        if (ret < 0) {
+            LOG("Error at blockdevice.read() (Reading dmap)");
+            LOGI(ret);
+            LOG("Errno:");
+            LOGI(errno);
+        }
+        ret = this->blockDeviceHelper.readDevice(FAT_START, fatList, sizeof(*fatArray) * DATA_BLOCKS);
+        if (ret < 0) {
+            LOG("Error at blockdevice.read() (Reading fat)");
+            LOGI(ret);
+            LOG("Errno:");
+            LOGI(errno);
+        }
+        ret = this->blockDeviceHelper.readDevice(ROOT_START, rootArray, sizeof(*rootArray) * ROOT_ARRAY_SIZE);
+        if (ret < 0) {
+            LOG("Error at blockdevice.read() (Reading root)");
+            LOGI(ret);
+            LOG("Errno:");
+            LOGI(errno);
+        }
+
+        this->dmap.setDMap(dMapArray);
+        this->fat.setFat(fatArray);
+        this->rootDir.setAll(rootArray);
+
+        delete[] dMapArray;
+        delete[] fatArray;
+        delete[] rootArray;
+
+        for (int i = 0; i < NUM_OPEN_FILES; i++) {
+            openFiles[i].rootIndex = -1;
+            openFiles[i].read = false;
+            openFiles[i].write = false;
+            openFiles[i].bufferBlockNumber = FAT_TERMINATOR;
+        }
+
+        LOG("Successfully initialized the filesystem")
+
+        RETURN(0);
+    }
+    LOG("Error at blockdevice.open()");
+    RETURN(-1);
+}

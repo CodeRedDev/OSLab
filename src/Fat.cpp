@@ -40,3 +40,16 @@ std::vector<uint16_t> Fat::getAssociatedBlocks(uint16_t startBlock) {
 uint16_t* Fat::getFatList() {
     return this->fatList;
 }
+
+/**
+ * Sets the internal class instance fatList to the same as the parameter fatList
+ *
+ * @param fatList
+ * @return void
+ */
+void Fat::setFat(uint16_t* fatList)
+{
+    for (int i = 0; i < DATA_BLOCKS; i++){
+        this->fatList[i] = *(fatList + i);
+    }
+}
