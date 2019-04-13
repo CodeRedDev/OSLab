@@ -184,8 +184,20 @@ int MyFS::fuseRelease(const char *path, struct fuse_file_info *fileInfo) {
     LOGM();
     
     // TODO: Implement this!
-    
-    RETURN(0);
+    if (fileInfo->fh < 0 || fileInfo->fh >= NUM_DIR_ENTRIES) {
+        errno = EBADF;
+        RETURN(-errno);
+    }
+    if (openFiles[fileInfo->fh].rootIndex >= 0) {
+        openFiles[fileInfo->fh].rootInedx = -1;
+        openFiles[fileInfo->fh].read = false;
+        openFiles[fileInfo->fh].write = false;
+        openFiles[fileInfo->fh].bufferBlockNumber = FAT_EOF;
+        RETURN(0);
+    } else {
+        errno = EBADF;
+        RETURN(-errno);
+    }
 }
 
 int MyFS::fuseFsync(const char *path, int datasync, struct fuse_file_info *fi) {
@@ -217,10 +229,10 @@ int MyFS::fuseReaddir(const char *path, void *buf, fuse_fill_dir_t filler, off_t
     // TODO: Implement this!
     if (strcmp("/", path) == 0) {
         for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
-            if (rootDir.exists(i)) {
+            if (this->rootDir.exists(i)) {
                 struct stat s = {};
                 char* name;
-                rootDir.getName(i, &name);
+                this->rootDir.getName(i, &name);
                 fuseGetattr(name, &s);
                 filler(buf, name, &s, 0);
             }
