@@ -25,16 +25,14 @@ private:
     static MyFS *_instance;
     FILE *logFile;
 
-    static MyFS *_instance;
-    FILE *logFile;
     BlockDevice* blockDevice = new BlockDevice();
     BlockDeviceHelper blockDeviceHelper = BlockDeviceHelper(blockDevice);
-    FAT fat = Fat();
-    DMap dmap = DMap();
+    Fat fat = Fat();
+    DMap dMap = DMap();
     RootDirectory rootDir = RootDirectory();
     SuperBlock superBlock;
 
-    OpenFile openFiles = new OpenFile[NUM_OPEN_FILES];
+    OpenFile* openFiles = new OpenFile[NUM_OPEN_FILES];
 
 public:
     static MyFS *Instance();
@@ -85,7 +83,7 @@ public:
     void fuseDestroy();
     
     // TODO: Add methods of your file system here
-    
+    int initializeFilesystem(char* containerFile);
 };
 
 #endif /* myfs_h */

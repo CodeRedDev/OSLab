@@ -327,7 +327,7 @@ int MyFS::fuseGetxattr(const char *path, const char *name, char *value, size_t s
  * @param char* containerFile
  * @return int
  */
-int MyFS::initializeFilesystem(char* containerFile) {
+int MyFS::initializeFilesystem(char *containerFile) {
     if (blockDevice->open(containerFile) == 0) {
         bool *dMapBlocks = new bool[DATA_BLOCKS];
         FileInfo *rootArray = new FileInfo[ROOT_ARRAY_SIZE];
@@ -363,7 +363,7 @@ int MyFS::initializeFilesystem(char* containerFile) {
             LOGI(errno);
         }
 
-        this->dmap.setDMap(dMapArray);
+        this->dMap.setDMap(dMapArray);
         this->fat.setFat(fatArray);
         this->rootDir.setAll(rootArray);
 
@@ -378,7 +378,7 @@ int MyFS::initializeFilesystem(char* containerFile) {
             this->openFiles[i].bufferBlockNumber = FAT_TERMINATOR;
         }
 
-        LOG("Successfully initialized the filesystem")
+        LOG("Successfully initialized the filesystem");
 
         RETURN(0);
     }
