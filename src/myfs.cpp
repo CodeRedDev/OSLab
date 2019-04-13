@@ -19,6 +19,8 @@
 
 #include "myfs.h"
 #include "myfs-info.h"
+#include <string.h>
+#include <iostream>
 
 MyFS* MyFS::_instance = NULL;
 
@@ -41,8 +43,38 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
     LOGM();
     
     // TODO: Implement this!
-    
-    RETURN(0);
+
+    const char* filename = path;
+
+    if(*path == '/'){
+        if(std::strlen(path) == 1){
+            filename = ".";
+        }else{
+            filename++;
+        }
+    }
+
+    FileInfo fileInfo;
+    int fileDesc = this->rootDir.get(filename, &fileInfo);
+    if(fileDesc < 0){
+        std::cerr << "No file found for path: " << *path << std::endl << "Error number:" << errno << std::endl;
+        return errno;
+    }
+
+    statbuf->st_size = fileInfo.size;
+
+    statbuf->st_uid = fileInfo.userID;
+    statbuf->st_gid = fileInfo.groupID;
+
+    statbuf->st_mode = fileInfo.readWriteExecuteRighs;
+
+    statbuf->st_atime = fileInfo.lastAccess;
+    statbuf->st_ctime = fileInfo.lastChange;
+    statbuf->st_mtime = fileInfo.lastChange;
+
+    statbuf->st_nlink = fileInfo.nlink;
+
+    return 0;
 }
 
 int MyFS::fuseReadlink(const char *path, char *link, size_t size) {
