@@ -8,4 +8,5 @@
 !/unittests
 !/unittests/**
 !Makefile
+!CMakeLists.txt
 !.gitignore
