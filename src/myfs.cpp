@@ -303,12 +303,12 @@ int MyFS::fuseRead(const char *path, char *buf, size_t size, off_t offset, struc
     uint16_t currentBlock = file.firstBlock;
     uint16_t blocks[fileBlockCount]; //saves all block locations needed for this operation
     for ( int t = 0; t < blockNo ; t++){
-        this->fat.getNextBlock(currentBlock);
+        currentBlock = this->fat.getNextBlock(currentBlock);
     }
 
     for(int i = 0; i < fileBlockCount; i++){ // save blocks for reading
         blocks[i] = currentBlock;
-        this->fat.getNextBlock(currentBlock);
+        currentBlock = this->fat.getNextBlock(currentBlock);
     }
 
     char buffer[BLOCK_SIZE];
