@@ -39,7 +39,7 @@ typedef struct{
     uint16_t dataStart;
     size_t dataSize;
 
-}SuperBlock;
+} SuperBlock;
 
 typedef struct{
 
@@ -56,6 +56,6 @@ typedef struct{
 
     mode_t readWriteExecuteRighs;
 
-}fileInfo;
+} fileInfo;
 
 #endif /* myfs_structs_h */

@@ -2,8 +2,8 @@
 // Created by Mika Auer on 2019-04-07.
 //
 
-#ifndef MYFS_DMAP_H
-#define MYFS_DMAP_H
+#ifndef DMAP_H
+#define DMAP_H
 
 #include <cstdint>
 #include "constants.h"
@@ -33,4 +33,4 @@ public:
 
 };
 
-#endif //MYFS_DMAP_H
+#endif //DMAP_H
