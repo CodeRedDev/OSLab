@@ -22,6 +22,8 @@
 
 #include "myfs.h"
 #include "myfs-info.h"
+#include <string.h>
+#include <iostream>
 
 MyFS* MyFS::_instance = NULL;
 
@@ -44,8 +46,38 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
     LOGM();
     
     // TODO: Implement this!
-    
-    RETURN(0);
+
+    const char* filename = path;
+
+    if(*path == '/'){
+        if(std::strlen(path) == 1){
+            filename = ".";
+        }else{
+            filename++;
+        }
+    }
+
+    FileInfo fileInfo;
+    int fileDesc = this->rootDir.get(filename, &fileInfo);
+    if(fileDesc < 0){
+        std::cerr << "No file found for path: " << *path << std::endl << "Error number:" << errno << std::endl;
+        return errno;
+    }
+
+    statbuf->st_size = fileInfo.size;
+
+    statbuf->st_uid = fileInfo.userID;
+    statbuf->st_gid = fileInfo.groupID;
+
+    statbuf->st_mode = fileInfo.readWriteExecuteRighs;
+
+    statbuf->st_atime = fileInfo.lastAccess;
+    statbuf->st_ctime = fileInfo.lastChange;
+    statbuf->st_mtime = fileInfo.lastChange;
+
+    statbuf->st_nlink = fileInfo.nlink;
+
+    return 0;
 }
 
 int MyFS::fuseReadlink(const char *path, char *link, size_t size) {
@@ -152,8 +184,20 @@ int MyFS::fuseRelease(const char *path, struct fuse_file_info *fileInfo) {
     LOGM();
     
     // TODO: Implement this!
-    
-    RETURN(0);
+    if (fileInfo->fh < 0 || fileInfo->fh >= NUM_DIR_ENTRIES) {
+        errno = EBADF;
+        RETURN(-errno);
+    }
+    if (openFiles[fileInfo->fh].rootIndex >= 0) {
+        openFiles[fileInfo->fh].rootInedx = -1;
+        openFiles[fileInfo->fh].read = false;
+        openFiles[fileInfo->fh].write = false;
+        openFiles[fileInfo->fh].bufferBlockNumber = FAT_EOF;
+        RETURN(0);
+    } else {
+        errno = EBADF;
+        RETURN(-errno);
+    }
 }
 
 int MyFS::fuseFsync(const char *path, int datasync, struct fuse_file_info *fi) {
@@ -185,10 +229,10 @@ int MyFS::fuseReaddir(const char *path, void *buf, fuse_fill_dir_t filler, off_t
     // TODO: Implement this!
     if (strcmp("/", path) == 0) {
         for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
-            if (rootDir.exists(i)) {
+            if (this->rootDir.exists(i)) {
                 struct stat s = {};
                 char* name;
-                rootDir.getName(i, &name);
+                this->rootDir.getName(i, &name);
                 fuseGetattr(name, &s);
                 filler(buf, name, &s, 0);
             }
