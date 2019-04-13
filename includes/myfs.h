@@ -14,17 +14,32 @@
 
 #include "blockdevice.h"
 #include "myfs-structs.h"
+#include "Fat.h"
+#include "DMap.h"
+#include "RootDirectory.h"
+#include "BlockDeviceHelper.h"
 
 class MyFS {
 private:
     static MyFS *_instance;
     FILE *logFile;
-    
+
+    static MyFS *_instance;
+    FILE *logFile;
+    BlockDevice* blockDevice = new BlockDevice();
+    BlockDeviceHelper blockDeviceHelper = BlockDeviceHelper(blockDevice);
+    FAT fat = Fat();
+    DMap dmap = DMap();
+    RootDirectory rootDir = RootDirectory();
+    SuperBlock superBlock;
+
+    OpenFile openFiles = new OpenFile[NUM_OPEN_FILES];
+
 public:
     static MyFS *Instance();
     
     // TODO: Add attributes of your file system here
-    
+
     MyFS();
     ~MyFS();
     
