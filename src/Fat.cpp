@@ -14,21 +14,21 @@ int Fat::setNextBlock(uint16_t currentBlock, uint16_t nextBlock) {
     if (currentBlock == nextBlock) {
         return -1;
     }
-    fatList[currentBlock] = nextBlock;
+    this->fatList[currentBlock] = nextBlock;
     return 0;
 }
 
 uint16_t Fat::getNextBlock(uint16_t currentBlock) {
-    return fatList[currentBlock];
+    return this->fatList[currentBlock];
 }
 
 std::vector<uint16_t> Fat::getAssociatedBlocks(uint16_t startBlock) {
     std::vector<uint16_t> blocks{startBlock};
     uint16_t currentBlock = startBlock;
     
-    while (getNextBlock(currentBlock) != FAT_EOF) {
+    while (this->getNextBlock(currentBlock) != FAT_EOF) {
         blocks.push_back(getNextBlock(currentBlock));
-        currentBlock = getNextBlock(currentBlock);
+        currentBlock = this->getNextBlock(currentBlock);
     }
     return blocks;
 }
