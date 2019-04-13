@@ -61,7 +61,7 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
     int fileDesc = this->rootDir.get(filename, &fileInfo);
     if(fileDesc < 0){
         std::cerr << "No file found for path: " << *path << std::endl << "Error number:" << errno << std::endl;
-        return errno;
+        RETURN (-errno);
     }
 
     statbuf->st_size = fileInfo.size;
@@ -77,7 +77,7 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
 
     statbuf->st_nlink = fileInfo.nlink;
 
-    return 0;
+    RETURN(0);
 }
 
 int MyFS::fuseReadlink(const char *path, char *link, size_t size) {
@@ -150,99 +150,117 @@ int MyFS::fuseOpen(const char *path, struct fuse_file_info *fileInfo) {
     LOGM();
     
     // TODO: Implement this!
+    const char* name = path;
+    if (*path == '/') {
+        if (strlen(path) == 1) {
+            name = ".";
+        } else {
+            name++;
+        }
+    }
+    LOGF("File name: %s", name);
+    
+    FileInfo file;
+    int rootIndex = rootDir.get(name, &file);
+    if (rootIndex = -1) {
+        RETURN(-errno);
+    }
+    
+    bool success = false;
+    bool read = false;
+    bool write = false;
+    
+    if (file.userID == geteuid()) {
+        if ((fileInfo->flags & O_RDWR) != 0) {
+            LOG("User RDWR");
+            if ((file.readWriteExecuteRighs & S_IRWXU) != 0) {
+                read = true;
+                write = true;
+                success = true;
+            }
+        } else if ((fileInfo->flags & O_WRONLY) != 0) {
+            if ((file.readWriteExecuteRighs & S_IWUSR) != 0) {
+                LOG("User WRONLY");
+                write = true;
+                success = true;
+            }
+        } else {
+            LOG("User RDONLY");
+            if ((file.readWriteExecuteRighs & S_IRUSR) != 0) {
+                read = true;
+                success = true;
+            }
+        }
+    } else if (file.groupID == getegid()) {
+        if ((fileInfo->flags & O_RDWR) != 0) {
+            LOG("Group RDWR");
+            if ((file.readWriteExecuteRighs & S_IRWXG) != 0) {
+                read = true;
+                write = true;
+                success = true;
+            }
+        } else if ((fileInfo->flags & O_WRONLY) != 0) {
+            LOG("Group WRONLY");
+            if ((file.readWriteExecuteRighs & S_IWGRP) != 0) {
+                write = true;
+                success = true;
+            }
+        } else {
+            LOG("Group RDONLY");
+            if ((file.readWriteExecuteRighs & S_IRGRP) != 0) {
+                read = true;
+                success = true;
+            }
+        }
+    } else {
+        if ((fileInfo->flags & O_RDWR) != 0) {
+            LOG("Other RDWR");
+            if ((file.readWriteExecuteRighs & S_IRWXO) != 0) {
+                read = true;
+                write = true;
+                success = true;
+            }
+        } else if ((fileInfo->flags & O_WRONLY) != 0) {
+            LOG("Other WRONLY");
+            if ((file.readWriteExecuteRighs & S_IWOTH) != 0) {
+                write = true;
+                success = true;
+            }
+        } else {
+            LOG("Other RDONLY");
+            if ((file.readWriteExecuteRighs & S_IROTH) != 0) {
+                read = true;
+                success = true;
+            }
+        }
+    }
+
+    if (success) {
+        for (int i = 0; i < NUM_OPEN_FILES; i++) {
+            if (openFiles[i].rootIndex < 0) {
+                openFiles[i].rootIndex = rootIndex;
+                openFiles[i].write = write;
+                openFiles[i].read = read;
+                fileInfo->fh = i;
+                RETURN(0);
+            }
+        }
+        errno = EMFILE;
+	    RETURN(-errno);
+    } else {
+        errno = EACCES;
+        RETURN(-errno);
+    }
     
     RETURN(0);
 }
 
 int MyFS::fuseRead(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fileInfo) {
     LOGM();
-    if (offset < 0){
-        offset = 0;
-    }
+    
+    // TODO: Implement this!
 
-    int fileDescriptor = fileInfo->fh;
-
-    if ((fileDescriptor < 0) || (fileDescriptor >= NUM_DIR_ENTRIES)) {
-        errno = EBADF;
-        RETURN(-errno);
-    }
-
-    // Check if file is already being read
-    if (this->openFiles[fileDescriptor].rootIndex < 0 || !(this->openFiles[fileDescriptor].read)) {
-        errno = EBADF;
-        RETURN(-errno);
-    }
-
-    // Get file info
-    int rootIndex = this->openFiles[fileDescriptor].rootIndex;
-    FileInfo file;
-    if (this->rootDir.get(rootIndex, &file) == -1){
-        RETURN(-errno);
-    }
-    if (file.size <= offset){
-        RETURN(0);
-    }
-    if ((uint64_t)file.size < offset + size) {//TODO uint32_t
-        size = file.size - offset;//TODO WHY?
-    }
-
-    // Set the lastAccess time to the current time
-    file.lastAccess = time(NULL);
-    this->rootDir.update(file);
-
-    off_t blockNo = offset / BLOCK_SIZE; // block number of file (not block number in filesystem!)
-    off_t blockOffset = offset % BLOCK_SIZE; // offset in the block
-
-    //number of blocks you need to read for this operation (upper limit)
-    int fileBlockCount = (size + blockOffset) / BLOCK_SIZE;
-    if ((size + blockOffset) % BLOCK_SIZE != 0) {
-        fileBlockCount++;
-    }
-
-    uint16_t currentBlock = file.firstBlock;
-    uint16_t blocks[fileBlockCount]; //saves all block locations needed for this operation
-    for ( int t = 0; t < blockNo ; t++){
-        this->fat.getNextBlock(currentBlock);
-    }
-
-    for(int i = 0; i < fileBlockCount; i++){ // save blocks for reading
-        blocks[i] = currentBlock;
-        this->fat.getNextBlock(currentBlock);
-    }
-
-    char buffer[BLOCK_SIZE];
-    size_t readSize;
-    if (blockOffset + size < BLOCK_SIZE) {
-        readSize = size;
-    } else {
-        readSize = BLOCK_SIZE - (size_t)blockOffset;
-    }
-    if (this->openFiles[fileDescriptor].bufferBlockNumber == blocks[0]) {
-        memcpy(buf, this->openFiles[fileDescriptor].buffer + blockOffset, readSize);
-    } else {
-        blockDevice->read(DATA_START + blocks[0], buffer);
-        memcpy(buf, buffer + blockOffset, readSize);
-        if (fileBlockCount == 1) {
-            memcpy(this->openFiles[fileDescriptor].buffer, buffer, BLOCK_SIZE);
-            this->openFiles[fileDescriptor].bufferBlockNumber = blocks[fileBlockCount - 1];
-        }
-    }
-    for (int j = 1; j < fileBlockCount - 1; j++) {
-        //First read block size was BLOCK_SIZE - blockOffset. This value has to be added to the next read operations.
-        this->blockDevice->read(DATA_START + blocks[j], buf - blockOffset + BLOCK_SIZE * j);
-        LOGF("Block %d wird gelesen",blocks[j]);//new testing TODO delete
-    }
-    if (fileBlockCount > 1) {
-        readSize = (size + blockOffset) % BLOCK_SIZE;
-        if (readSize == 0) readSize = BLOCK_SIZE;
-        this->blockDevice->read(DATA_START + blocks[fileBlockCount - 1], buffer);
-        memcpy(buf - blockOffset + (fileBlockCount - 1) * BLOCK_SIZE, buffer, readSize);
-
-        memcpy(openFiles[fileDescriptor].buffer, buffer, BLOCK_SIZE);
-        this->openFiles[fileDescriptor].bufferBlockNumber = blocks[fileBlockCount - 1];
-    }
-
-    RETURN((int)size);
+    RETURN(0);
 }
 
 int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fileInfo) {
@@ -446,7 +464,7 @@ int MyFS::initializeFilesystem(char *containerFile) {
             this->openFiles[i].rootIndex = -1;
             this->openFiles[i].read = false;
             this->openFiles[i].write = false;
-            this->openFiles[i].bufferBlockNumber = FAT_EOF;
+            this->openFiles[i].bufferBlockNumber = -1;
         }
 
         LOG("Successfully initialized the filesystem");
