@@ -10,6 +10,7 @@
 #include <iostream>
 
 DMap::DMap() {
+    // TODO: Why DATA_BLOCKS + 1
     for (int i = 0; i < DATA_BLOCKS + 1; i++) {
         this->blocks[i] = true;
     }

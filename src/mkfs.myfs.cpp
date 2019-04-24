@@ -40,28 +40,6 @@ int main(int argc, char *argv[]) {
         remove(argv[1]);
         device->create(argv[1]);
         
-        /*
-        ret = deviceHelper.writeDevice(SUPERBLOCK_START, &superBlock, sizeof(superBlock));
-        if (ret < 0) {
-            std::cerr << "Failed to write SuperBlock (" << ret << ") caused by:" << errno << std::endl;
-        }
-        
-        ret = deviceHelper.writeDevice(FAT_START, fat.getFat(), sizeof(*(fat.getFatList())) * DATA_BLOCKS);
-        if (ret < 0) {
-            std::cerr << "Failed to write FAT (" << ret << ") caused by:" << errno << std::endl;
-        }
-        
-        ret = deviceHelper.writeDevice(DMAP_START, dMap.getDMap(), sizeof(*(dMap.getDMap())) * DATA_BLOCKS);
-        if (ret < 0) {
-            std::cerr << "Failed to write DMap (" << ret << ") caused by:" << errno << std::endl;
-        }
-        
-        ret = deviceHelper.writeDevice(ROOTDIR_START, rootArray, sizeof(*rootArray) * ROOT_ARRAY_SIZE);
-        if (ret < 0) {
-            std::cerr << "Failed to write RootDirectory (" << ret << ") caused by:" << errno << std::endl;
-        }
-        */
-        
         if (argc > 2) {
             // TODO: file length check?
             struct stat bufferTime = {};
@@ -73,7 +51,7 @@ int main(int argc, char *argv[]) {
                 int fileDesc = open(filename, O_RDONLY);
                 
                 if (fileDesc < 0) {
-                    std::cout << "Dein SChinken" << std::endl;
+                    std::cout << "Dein Schinken" << std::endl;
                     return errno;
                 } else {
                     stat(argv[i], &bufferTime);

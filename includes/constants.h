@@ -33,7 +33,8 @@
 #define SUPERBLOCK_SIZE 1
 #define FAT_SIZE 255
 #define DMAP_SIZE 123 // TODO: When saving only the map 123 blocks will be enough
-#define ROOTDIR_SIZE 0 // TODO: Calculate blocks needed after implementation
+#define ROOTDIR_SIZE 39 // FileInfo struct has size of 285 byte (rootdir holds array of 65 FileInfo) => 18525byte
+// TODO: Should take 37 blocks but works with 39... WHYYYYYYYYY?
 
 #define SUPERBLOCK_START 0
 #define FAT_START (SUPERBLOCK_START + SUPERBLOCK_SIZE)
