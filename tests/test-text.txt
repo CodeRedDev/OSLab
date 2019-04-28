@@ -1,0 +1,6 @@
+#!/bin/bash
+cd ~/CLionProjects/OSLabNew
+./mkfs.myfs cont.bin test.rtf
+./mount.myfs cont.bin log.txt mount
+cd mount
+open ./test.rtf

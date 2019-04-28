@@ -5,6 +5,8 @@
 !/includes/**
 !/src
 !/src/**
+!/tests
+!/tests/**
 !/unittests
 !/unittests/**
 !Makefile

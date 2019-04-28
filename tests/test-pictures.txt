@@ -1,0 +1,8 @@
+#!/bin/bash
+cd ~/CLionProjects/OSLabNew
+./mkfs.myfs cont.bin Elephant.jpg Frog.jpg Galaxy-Wallpaper-Desktop.jpg
+./mount.myfs cont.bin log.txt mount
+cd mount
+open ./Galaxy-Wallpaper-Desktop.jpg
+open ./Frog.jpg
+open ./Elephant.jpg
