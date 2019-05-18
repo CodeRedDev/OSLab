@@ -59,7 +59,7 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
 
     FileInfo fileInfo;
     FileInfo *fileInfoPtr = &fileInfo;
-    fileInfoPtr = this->rootDir.get(filename);
+    *fileInfoPtr = *this->rootDir.get(filename);
     int fileDesc = -1;
     if (fileInfoPtr != nullptr) {
         fileDesc = this->rootDir.getPos(fileInfoPtr);
@@ -167,7 +167,7 @@ int MyFS::fuseOpen(const char *path, struct fuse_file_info *fileInfo) {
 
     FileInfo file;
     FileInfo* filePtr = &file;
-    filePtr = rootDir.get(name);
+    *filePtr = *rootDir.get(name);
     int rootIndex = -1;
     if(filePtr != nullptr) {
         int rootIndex = rootDir.getPos(&file);
