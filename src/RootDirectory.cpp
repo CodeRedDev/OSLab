@@ -26,10 +26,12 @@ RootDirectory::~RootDirectory() {
 }
 
 //return full fileInfo array (for writing to hard driver)
-void RootDirectory::getAll(FileInfo* fileInfo) {
+FileInfo* RootDirectory::getAll() {
+    FileInfo* fileInfos = new FileInfo[ROOT_ARRAY_SIZE];
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
-        *(fileInfo + i) = rootArray[i];
+        fileInfos[i] = rootArray[i];
     }
+    return fileInfos;
 }
 
 //set fileInfo array (for reading from hard driver)
@@ -106,14 +108,24 @@ int RootDirectory::rename(const char *oldname, const char *newname) {
 }
 
 // get the fileInfo of the given file, returns a number that can be used as a file descriptor
-int RootDirectory::get(const char* name, FileInfo* fileInfo) {
+FileInfo* RootDirectory::get(const char* name) {
+    FileInfo* fileInfo;
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, name) == 0) {
-            *fileInfo = rootArray[i];
-            return i;
+            fileInfo = &rootArray[i];
+            return fileInfo;
         }
     }
     errno = ENOENT;
+    return nullptr;
+}
+
+int RootDirectory::getPos(FileInfo* fileInfo){
+    for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
+        if(strcmp(rootArray[i].name, fileInfo->name) == 0){
+            return i;
+        }
+    }
     return -1;
 }
 
@@ -133,12 +145,13 @@ int RootDirectory::update(FileInfo fileInfo) {
 
 
 //return fileInfo of the file under given number
-int RootDirectory::get(int index, FileInfo* fileInfo) {
+FileInfo* RootDirectory::get(int index) {
+    FileInfo* fileInfo;
     if (index < ROOT_ARRAY_SIZE) {
-        *fileInfo = rootArray[index];
-        return 0;
+        fileInfo = &rootArray[index];
+        return fileInfo;
     }
-    return -1;
+    return nullptr;
 }
 
 ///returns true if index <= Root_Array_Size
@@ -151,17 +164,17 @@ bool RootDirectory::exists(int index) {
     return false;
 }
 
-int RootDirectory::getName(int index, char** name) {
+char* RootDirectory::getName(int index) {
     if (index <= ROOT_ARRAY_SIZE) {
         if (rootArray[index].size >= 0) {
-            *name = rootArray[index].name;
-            return 0;
+            return rootArray[index].name;
         }
         errno = ENOENT;
-        return -1;
+
+        return nullptr;
     } else {
         errno = ENXIO;
-        return -1;
+        return nullptr;
     }
 }
 

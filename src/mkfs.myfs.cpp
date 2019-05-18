@@ -61,8 +61,13 @@ int main(int argc, char *argv[]) {
                         return errno;
                     }
                     FileInfo fileInfo;
+                    FileInfo* fileInfoPtr = &fileInfo;
                     // Get file stats
-                    ret = rootDir.get(filename, &fileInfo);
+                    *fileInfoPtr = *rootDir.get(filename);
+                    ret = -1;
+                    if(fileInfoPtr != nullptr) {
+                        ret = rootDir.getPos(fileInfoPtr);
+                    }
                     fileInfo.lastChange = bufferTime.st_ctime;
                     ret = rootDir.update(fileInfo);
                     if (ret < 0) {
@@ -120,7 +125,7 @@ int main(int argc, char *argv[]) {
         
         
         // TODO: Get modified rootArray
-        rootDir.getAll(rootArray);
+        rootArray = rootDir.getAll();
         
         ret = deviceHelper.writeDevice(SUPERBLOCK_START, &superBlock, sizeof(superBlock));
         if (ret < 0) {

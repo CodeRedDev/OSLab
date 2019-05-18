@@ -21,12 +21,13 @@ private:
 public:
     RootDirectory();
     ~RootDirectory();
-    void getAll(FileInfo* fileInfo);
+    FileInfo* getAll();
     void setAll(FileInfo* fileInfo);
 
     //Methods with filename:
 
-    int get(const char* name, FileInfo* fileInfo);
+    FileInfo* get(const char* name);
+    int getPos(FileInfo* fileInfo);
     int update(FileInfo fileInfo);
     int deleteEntry(const char* name);
     int createEntry(const char* name, mode_t mode);
@@ -35,10 +36,10 @@ public:
 
     //Methods with position(--> file descriptor):
 
-    int get(int num, FileInfo* fileInfo);
+    FileInfo* get(int index);
     int set(int num, char* filePath);
     bool exists(int index);
-    int getName(int index, char** name);
+    char* getName(int index);
 
 };
 
