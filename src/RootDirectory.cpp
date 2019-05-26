@@ -12,7 +12,7 @@ RootDirectory::RootDirectory() {
     }
     DIR_STATS = {};
     strcpy(DIR_STATS.name, ".");
-    DIR_STATS.readWriteExecuteRighs = S_IFDIR | 0775;
+    DIR_STATS.readWriteExecuteRights = S_IFDIR | 0775;
     DIR_STATS.userID = geteuid();
     DIR_STATS.groupID = getegid();
     time_t currentTime = time(NULL);
@@ -22,14 +22,12 @@ RootDirectory::RootDirectory() {
 }
 
 RootDirectory::~RootDirectory() {
-    delete[] rootArray;
+    // Nothing to clear
 }
 
 //return full fileInfo array (for writing to hard driver)
-void RootDirectory::getAll(FileInfo* fileInfo) {
-    for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
-        *(fileInfo + i) = rootArray[i];
-    }
+FileInfo* RootDirectory::getAll() {
+    return rootArray;
 }
 
 //set fileInfo array (for reading from hard driver)
@@ -74,7 +72,7 @@ int RootDirectory::createEntry(const char *name, mode_t mode) {
             time_t currentTime = time(NULL);
             stats.lastAccess = currentTime;
             stats.lastChange = currentTime;
-            stats.readWriteExecuteRighs = S_IFREG | mode; // regular file
+            stats.readWriteExecuteRights = S_IFREG | mode; // regular file
             stats.nlink = 1;
             stats.firstBlock = FAT_EOF;
             rootArray[i] = stats;
@@ -106,14 +104,22 @@ int RootDirectory::rename(const char *oldname, const char *newname) {
 }
 
 // get the fileInfo of the given file, returns a number that can be used as a file descriptor
-int RootDirectory::get(const char* name, FileInfo* fileInfo) {
+FileInfo* RootDirectory::get(const char* name) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, name) == 0) {
-            *fileInfo = rootArray[i];
-            return i;
+            return &rootArray[i];
         }
     }
     errno = ENOENT;
+    return nullptr;
+}
+
+int RootDirectory::getPosition(FileInfo* fileInfo){
+    for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
+        if(strcmp(rootArray[i].name, fileInfo->name) == 0){
+            return i;
+        }
+    }
     return -1;
 }
 
@@ -133,12 +139,11 @@ int RootDirectory::update(FileInfo fileInfo) {
 
 
 //return fileInfo of the file under given number
-int RootDirectory::get(int index, FileInfo* fileInfo) {
+FileInfo* RootDirectory::get(int index) {
     if (index < ROOT_ARRAY_SIZE) {
-        *fileInfo = rootArray[index];
-        return 0;
+        return &rootArray[index];
     }
-    return -1;
+    return nullptr;
 }
 
 ///returns true if index <= Root_Array_Size
@@ -151,23 +156,23 @@ bool RootDirectory::exists(int index) {
     return false;
 }
 
-int RootDirectory::getName(int index, char** name) {
+char* RootDirectory::getName(int index) {
     if (index <= ROOT_ARRAY_SIZE) {
         if (rootArray[index].size >= 0) {
-            *name = rootArray[index].name;
-            return 0;
+            return rootArray[index].name;
         }
         errno = ENOENT;
-        return -1;
+
+        return nullptr;
     } else {
         errno = ENXIO;
-        return -1;
+        return nullptr;
     }
 }
 
 //get fileInfo info from new file and add it to given position
 //in array
-int RootDirectory::set(int num, char* filePath) {
+int RootDirectory::set(int index, char* filePath) {
     struct stat sb;
     stat(filePath, &sb);
     char *filename = basename(filePath);
@@ -182,7 +187,7 @@ int RootDirectory::set(int num, char* filePath) {
     status->lastChange = sb.st_mtime;
     time(&(status->lastAccess));
     time(&(status->lastChange));
-    rootArray[num] = *status;
+    rootArray[index] = *status;
 
     delete status;
     return 0;
