@@ -31,8 +31,6 @@ int main(int argc, char *argv[]) {
     DMap dMap = DMap();
     RootDirectory rootDir = RootDirectory();
     
-    FileInfo* rootArray = new FileInfo[ROOT_ARRAY_SIZE];
-    
     if (argc > 1) {
         int ret = 0;
         
@@ -50,7 +48,7 @@ int main(int argc, char *argv[]) {
             }
             
             if (availableSpace < 0) {
-                std::cout << "The files to copy are to large for the file system. Aborting..." << std::endl;
+                std::cout << "The files to copy are too large for the file system. Aborting..." << std::endl;
                 return EXIT_FAILURE;
             }
             
@@ -72,16 +70,15 @@ int main(int argc, char *argv[]) {
                         std::cerr << "RootDirectory: Failed to create entry caused by: " << errno << std::endl;
                         return errno;
                     }
-                    FileInfo fileInfo;
-                    FileInfo* fileInfoPtr = &fileInfo;
+                    FileInfo* fileInfo;
                     // Get file stats
-                    *fileInfoPtr = *rootDir.get(filename);
+                    fileInfo = rootDir.get(filename);
                     ret = -1;
-                    if(fileInfoPtr != nullptr) {
-                        ret = rootDir.getPos(fileInfoPtr);
+                    if(fileInfo != nullptr) {
+                        ret = rootDir.getPosition(fileInfo);
                     }
-                    fileInfo.lastChange = fileStatBuffer.st_ctime;
-                    ret = rootDir.update(fileInfo);
+                    fileInfo->lastChange = fileStatBuffer.st_ctime;
+                    ret = rootDir.update(*fileInfo);
                     if (ret < 0) {
                         std::cerr << "RootDirectory: Failed to update info caused by: " << errno << std::endl;
                         return errno;
@@ -93,7 +90,7 @@ int main(int argc, char *argv[]) {
                         std::cerr << "DMap: Failed to get free block caused by: " << errno << std::endl;
                         return errno;
                     }
-                    fileInfo.firstBlock = nextBlock;
+                    fileInfo->firstBlock = nextBlock;
                     
                     // Write data
                     char buffer[BLOCK_SIZE];
@@ -105,7 +102,7 @@ int main(int argc, char *argv[]) {
                             return errno;
                         }
                         dMap.setBlockUsed(nextBlock);
-                        fileInfo.size += fileStream;
+                        fileInfo->size += fileStream;
                         
                         currentBlock = nextBlock;
                         nextBlock = dMap.getAFreeBlock();
@@ -124,20 +121,18 @@ int main(int argc, char *argv[]) {
                     }
                     
                     fat.setEndOfFile(nextBlock);
-                    ret = rootDir.update(fileInfo);
+                    ret = rootDir.update(*fileInfo);
                     if (ret < 0) {
                         std::cerr << "RootDirectory: Failed to update info caused by: " << errno << std::endl;
                         return errno;
                     }
-                    superBlock.freeSpace -= fileInfo.size;
+                    superBlock.freeSpace -= fileInfo->size;
                     close(fileDesc);
                 }
             }
         }
         
-        
-        // TODO: Get modified rootArray
-        rootArray = rootDir.getAll();
+        FileInfo* rootArray = rootDir.getAll();
         
         ret = deviceHelper.writeDevice(SUPERBLOCK_START, &superBlock, sizeof(superBlock));
         if (ret < 0) {
@@ -158,8 +153,6 @@ int main(int argc, char *argv[]) {
         if (ret < 0) {
             std::cerr << "Failed to write RootDirectory (" << ret << ") caused by:" << errno << std::endl;
         }
-        
-        delete[] rootArray;
     } else {
         std::cerr << "Invalid arguments: Missing container file!" << std::endl;
     }

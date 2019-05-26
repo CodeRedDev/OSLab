@@ -17,6 +17,10 @@ DMap::DMap() {
     this->firstFreeBlock = 0;
 }
 
+DMap::~DMap() {
+    // Nothing to clear
+}
+
 bool DMap::isBlockFree(uint16_t blockNo) {
     return this->blocks[blockNo];
 }

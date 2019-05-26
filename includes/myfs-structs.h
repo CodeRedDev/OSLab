@@ -64,7 +64,7 @@ typedef struct{
 
     uint16_t firstBlock;
 
-    mode_t readWriteExecuteRighs;
+    mode_t readWriteExecuteRights;
 
     nlink_t nlink;
 
