@@ -41,8 +41,20 @@ int main(int argc, char *argv[]) {
         device->create(argv[1]);
         
         if (argc > 2) {
-            // TODO: file length check?
-            struct stat bufferTime = {};
+            // Check file size
+            int availableSpace = DATA_BLOCKS * BLOCK_SIZE;
+            struct stat sizeBuffer = {};
+            for (int i = 2; i < argc; i++) {
+                stat(argv[i], &sizeBuffer);
+                availableSpace -= (int)sizeBuffer.st_size; // Why cast?
+            }
+            
+            if (availableSpace < 0) {
+                std::cout << "The files to copy are to large for the file system. Aborting..." << std::endl;
+                return EXIT_FAILURE;
+            }
+            
+            struct stat fileStatBuffer = {};
             
             // Copy files
             for (int i = 2; i < argc; i++) {
@@ -51,11 +63,11 @@ int main(int argc, char *argv[]) {
                 int fileDesc = open(filename, O_RDONLY);
                 
                 if (fileDesc < 0) {
-                    std::cout << "Dein Schinken" << std::endl;
+                    std::cout << "Failed at opening file on errorno: " << errno << std::endl;
                     return errno;
                 } else {
-                    stat(argv[i], &bufferTime);
-                    ret = rootDir.createEntry(filename, bufferTime.st_mode);
+                    stat(argv[i], &fileStatBuffer);
+                    ret = rootDir.createEntry(filename, fileStatBuffer.st_mode);
                     if (ret < 0) {
                         std::cerr << "RootDirectory: Failed to create entry caused by: " << errno << std::endl;
                         return errno;
@@ -68,7 +80,7 @@ int main(int argc, char *argv[]) {
                     if(fileInfoPtr != nullptr) {
                         ret = rootDir.getPos(fileInfoPtr);
                     }
-                    fileInfo.lastChange = bufferTime.st_ctime;
+                    fileInfo.lastChange = fileStatBuffer.st_ctime;
                     ret = rootDir.update(fileInfo);
                     if (ret < 0) {
                         std::cerr << "RootDirectory: Failed to update info caused by: " << errno << std::endl;
@@ -152,5 +164,5 @@ int main(int argc, char *argv[]) {
         std::cerr << "Invalid arguments: Missing container file!" << std::endl;
     }
     
-    return 0;
+    return EXIT_SUCCESS;
 }

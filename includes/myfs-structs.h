@@ -37,6 +37,20 @@ typedef struct{
 
 } SuperBlock;
 
+/*
+ * FileInfo size:
+ * name                     -   255 byte
+ * size                     -   4   byte
+ * userID                   -   4   byte
+ * groupID                  -   4   byte
+ * lastAccess               -   4   byte    or for 64bit    8   byte
+ * lastChange               -   4   byte    or for 64bit    8   byte
+ * firstBlock               -   2   byte
+ * readWriteExecuteRights   -   8   byte
+ * nLink                    -   4   byte    or for 64bit    8   byte
+ * 
+ * ==> To be safe FileInfo size would be 301 byte
+ */
 typedef struct{
 
     char name[NAME_LENGTH];
@@ -53,7 +67,6 @@ typedef struct{
     mode_t readWriteExecuteRighs;
 
     nlink_t nlink;
-
 
 } FileInfo;
 

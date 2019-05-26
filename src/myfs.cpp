@@ -45,8 +45,6 @@ MyFS::~MyFS() {
 int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
     LOGM();
 
-    // TODO: Implement this!
-
     const char *filename = path;
 
     if (*path == '/') {
@@ -170,7 +168,7 @@ int MyFS::fuseOpen(const char *path, struct fuse_file_info *fileInfo) {
     *filePtr = *rootDir.get(name);
     int rootIndex = -1;
     if(filePtr != nullptr) {
-        int rootIndex = rootDir.getPos(&file);
+        rootIndex = rootDir.getPos(&file);
     }
     if (rootIndex == -1) {
         RETURN(-errno);

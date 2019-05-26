@@ -4,4 +4,4 @@ cd ~/CLionProjects/OSLabNew
 ./mount.myfs cont.bin log.txt mount
 cd mount
 open ./family-guy.mp4
-Open ./video.mp4
+open ./video.mp4
