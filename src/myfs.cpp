@@ -95,6 +95,51 @@ int MyFS::fuseMknod(const char *path, mode_t mode, dev_t dev) {
 
     // TODO: Implement this!
 
+    const char *name = path;
+
+    if (*path == '/') {
+        if (strlen(path) == 1) {
+            name = ".";
+        } else {
+            name++;
+        }
+    }
+
+    if (rootDir.createEntry(name, mode) < 0) {
+        RETURN(-errno)
+    }
+
+    FileInfo *info = rootDir.get(name);
+    if (info == nullptr) {
+        RETURN(-errno)
+    }
+
+    uint16_t firstBlock = dMap.getAFreeBlock();
+
+    if (firstBlock < 0) {
+        RETURN(-errno)
+    }
+
+    info->firstBlock = firstBlock;
+    dMap.setBlockUsed(firstBlock);
+    fat.setEndOfFile(firstBlock);
+
+    time_t currentTime;
+    time(&currentTime);
+
+    info->lastAccess = currentTime;
+    info->lastChange = currentTime;
+    info->size = 0;
+    strcpy(info->name, name);
+    info->groupID = getgid();
+    info->userID = getuid();
+    info->nlink = 2;
+    info->readWriteExecuteRighs = mode;
+
+    if (rootDir.update(*info) < 0) {
+        RETURN(-errno)
+    }
+
     RETURN(0);
 }
 
@@ -166,10 +211,10 @@ int MyFS::fuseOpen(const char *path, struct fuse_file_info *fileInfo) {
     LOGF("File name: %s", name);
 
     FileInfo file;
-    FileInfo* filePtr = &file;
+    FileInfo *filePtr = &file;
     *filePtr = *rootDir.get(name);
     int rootIndex = -1;
-    if(filePtr != nullptr) {
+    if (filePtr != nullptr) {
         int rootIndex = rootDir.getPos(&file);
     }
     if (rootIndex == -1) {
