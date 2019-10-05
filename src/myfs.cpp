@@ -152,6 +152,31 @@ int MyFS::fuseUnlink(const char *path) {
     LOGM();
 
     // TODO: Implement this!
+    const char *name = path;
+
+    if (*path == '/') {
+        if (strlen(path) == 1) {
+            name = ".";
+        } else {
+            name++;
+        }
+    }
+
+    FileInfo *info = rootDir.get(name);
+    if (info == nullptr) {
+        RETURN(-errno)
+    }
+
+    uint16_t nextBlock = info->firstBlock;
+    do{
+        uint16_t currentBlock = nextBlock;
+        nextBlock = fat.get(currentBlock);
+        fat.setNextBlock(currentBlock, FAT_EOF);
+    }while (nextBlock != FAT_EOF);
+
+    if (rootDir.deleteEntry(name) < 0){
+        RETURN(-errno)
+    }
 
     RETURN(0);
 }

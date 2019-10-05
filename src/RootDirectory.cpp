@@ -151,6 +151,8 @@ FileInfo* RootDirectory::get(int index) {
         fileInfo = &rootArray[index];
         return fileInfo;
     }
+
+    errno = ENOENT;
     return nullptr;
 }
 

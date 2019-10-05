@@ -41,6 +41,13 @@ uint16_t* Fat::getFatList() {
     return this->fatList;
 }
 
+uint16_t Fat::get(uint16_t index){
+    if (index >= 0 && index < DATA_BLOCKS){
+        return this->fatList[index];
+    }
+    return -1;
+}
+
 /**
  * Sets the internal class instance fatList to the same as the parameter fatList
  *
