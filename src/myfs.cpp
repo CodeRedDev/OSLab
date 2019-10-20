@@ -168,13 +168,13 @@ int MyFS::fuseUnlink(const char *path) {
     }
 
     uint16_t nextBlock = info->firstBlock;
-    do{
+    do {
         uint16_t currentBlock = nextBlock;
         nextBlock = fat.get(currentBlock);
         fat.setNextBlock(currentBlock, FAT_EOF);
-    }while (nextBlock != FAT_EOF);
+    } while (nextBlock != FAT_EOF);
 
-    if (rootDir.deleteEntry(name) < 0){
+    if (rootDir.deleteEntry(name) < 0) {
         RETURN(-errno)
     }
 
@@ -431,6 +431,111 @@ int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset
     LOGM();
 
     // TODO: Implement this!
+    auto blockNumber = (uint16_t) fileInfo->fh;
+
+    if (blockNumber < 0 || blockNumber >= NUM_DIR_ENTRIES) {
+        errno = EBADF;
+        RETURN(-errno)
+    }
+
+    auto file = openFiles[blockNumber];
+    if (file.rootIndex < 0 || !file.write) {
+        errno = EBADF;
+        RETURN(-errno)
+    }
+
+    int rootIndex = file.rootIndex;
+    FileInfo *info = rootDir.get(rootIndex);
+    if (info != nullptr) {
+        RETURN(-errno)
+    }
+
+    if (info->size < offset) {
+        size_t writeEmptySpace = offset - info->size;
+        char writeEmptyBuffer[writeEmptySpace];
+        for (int i = 0; i < (int) writeEmptySpace; i++) {
+            writeEmptyBuffer[i] = 0;
+        }
+
+        int ret = fuseWrite(path, writeEmptyBuffer, writeEmptySpace, info->size, fileInfo);
+        if (ret < 0) {
+            RETURN(-errno)
+        };
+    }
+
+    time_t now = time(NULL);
+    info->lastChange = now;
+    info->lastAccess = now;
+    rootDir.update(*info);
+
+    off_t blockNoInFile = offset / BLOCK_SIZE;
+    off_t offsetInBlock = offset % BLOCK_SIZE;
+
+    //MARK: Look at this closely later
+    uint16_t numberOfBlocks;
+    if (size % BLOCK_SIZE != 0) {
+        numberOfBlocks = ((size + offsetInBlock) / BLOCK_SIZE) + 1;
+    } else {
+        numberOfBlocks = (size + offsetInBlock) / BLOCK_SIZE;
+    }
+
+    uint16_t current = info->firstBlock;
+    uint16_t previous = current;
+
+    //Gets to last block of existing file
+    for (int t = 0; t < blockNumber ; t++){
+        if (current != FAT_EOF) {
+            previous = current;
+        }
+        current = fat.get(current);
+    }
+
+    uint16_t blocksForFile[numberOfBlocks];
+    int alreadyExistingBlocks = 0;
+
+    //Get numbers of blocks that already exist in file before updating it
+    while (current != FAT_EOF && alreadyExistingBlocks < numberOfBlocks) {
+        blocksForFile[alreadyExistingBlocks] = current;
+        alreadyExistingBlocks++;
+        previous = current;
+        current = fat.get(current);
+    }
+
+    int newBlocksCount = numberOfBlocks - alreadyExistingBlocks;
+    uint16_t next = current;
+
+    //Write new blocks in dmap and fat
+    if (newBlocksCount > 0){
+        while(newBlocksCount > 0){
+            int nextBlockNo;
+            if((nextBlockNo = dMap.getAFreeBlock()) < 0){
+                RETURN(-errno)
+            }
+            dMap.setBlockUsed(next);
+            fat.setNextBlock(previous, next);
+            blocksForFile[numberOfBlocks - newBlocksCount] = next;
+            previous = next;
+
+            newBlocksCount--;
+        }
+        fat.setEndOfFile(next);
+    }
+
+    /*
+    FileInfo info;
+    info.firstBlock = blockNumber;
+
+    char *buffer;
+    if(size > BLOCK_SIZE){
+        std::memcpy(buffer, buf, BLOCK_SIZE);
+    } else{
+        std::memcpy(buffer, buf, size);
+    }
+    info.firstBlock = blockNumber;
+
+    std::memcpy(buffer, buf, BLOCK_SIZE);
+    blockDevice->write(blockNumber, buffer);
+    */
 
     RETURN(0);
 }
