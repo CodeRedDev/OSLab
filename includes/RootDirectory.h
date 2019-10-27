@@ -17,7 +17,7 @@
 
 class RootDirectory {
 private:
-    FileInfo *rootArray = new FileInfo[ROOT_ARRAY_SIZE];
+    FileInfo rootArray[ROOT_ARRAY_SIZE];
 public:
     RootDirectory();
     ~RootDirectory();
@@ -27,7 +27,7 @@ public:
     //Methods with filename:
 
     FileInfo* get(const char* name);
-    int getPos(FileInfo* fileInfo);
+    int getPosition(FileInfo* fileInfo);
     int update(FileInfo fileInfo);
     int deleteEntry(const char* name);
     int createEntry(const char* name, mode_t mode);
@@ -37,7 +37,7 @@ public:
     //Methods with position(--> file descriptor):
 
     FileInfo* get(int index);
-    int set(int num, char* filePath);
+    int set(int index, char* filePath);
     bool exists(int index);
     char* getName(int index);
 

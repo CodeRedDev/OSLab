@@ -21,7 +21,7 @@ class DMap{
 
 public:
     DMap();
-    ~DMap() = default;
+    ~DMap();
 
     void freeBlock(uint16_t blockNo);
     void setBlockUsed(uint16_t blockNo);
