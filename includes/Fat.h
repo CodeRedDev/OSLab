@@ -7,16 +7,16 @@
 
 class Fat {
 private:
-    uint16_t fatList[DATA_BLOCKS];
+    int fatList[DATA_BLOCKS];
 public:
     Fat();
     ~Fat();
-    int setNextBlock(uint16_t currentBlock, uint16_t nextBlock);
+    int setNextBlock(int currentBlock, int nextBlock);
     void setEndOfFile(uint16_t block);
-    uint16_t getNextBlock(uint16_t currentBlock);
+    int getNextBlock(uint16_t currentBlock);
     std::vector<uint16_t> getAssociatedBlocks(uint16_t startBlock);
-    uint16_t* getFatList();
-    uint16_t get(uint16_t index);
+    int* getFatList();
+    int get(uint16_t index);
     void setFat(uint16_t* fatList);
 };
 

@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <iostream>
+#include <macros.h>
 
 #include "myfs-structs.h"
 #include "RootDirectory.h"
@@ -39,11 +40,14 @@ void RootDirectory::setAll(FileInfo* fileInfo) {
 
 // deletes the fileInfo with the given name.
 int RootDirectory::deleteEntry(const char *name) {
+    LOG("deleteEntry in rootdir")
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
+        LOGF("Rootdir %d: %s",i, name)
         if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, name) == 0) {
             DIR_STATS.size -= rootArray[i].size;
             rootArray[i] = {};
             rootArray[i].size = -1;
+            LOGF("deleted in rootdir: %s", name)
             return 0;
         }
     }

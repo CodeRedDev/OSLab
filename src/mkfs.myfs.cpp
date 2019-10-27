@@ -84,8 +84,8 @@ int main(int argc, char *argv[]) {
                         return errno;
                     }
 
-                    uint16_t nextBlock = dMap.getAFreeBlock();
-                    uint16_t currentBlock;
+                    int nextBlock = dMap.getAFreeBlock();
+                    int currentBlock;
                     if (nextBlock < 0) {
                         std::cerr << "DMap: Failed to get free block caused by: " << errno << std::endl;
                         return errno;

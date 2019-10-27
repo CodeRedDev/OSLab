@@ -10,7 +10,7 @@ Fat::~Fat() {
     // Nothing to clear
 }
 
-int Fat::setNextBlock(uint16_t currentBlock, uint16_t nextBlock) {
+int Fat::setNextBlock(int currentBlock, int nextBlock) {
     if (currentBlock == nextBlock) {
         return -1;
     }
@@ -22,7 +22,7 @@ void Fat::setEndOfFile(uint16_t block) {
     fatList[block] = FAT_EOF;
 }
 
-uint16_t Fat::getNextBlock(uint16_t currentBlock) {
+int Fat::getNextBlock(uint16_t currentBlock) {
     return this->fatList[currentBlock];
 }
 
@@ -37,11 +37,11 @@ std::vector<uint16_t> Fat::getAssociatedBlocks(uint16_t startBlock) {
     return blocks;
 }
 
-uint16_t* Fat::getFatList() {
+int* Fat::getFatList() {
     return this->fatList;
 }
 
-uint16_t Fat::get(uint16_t index){
+int Fat::get(uint16_t index){
     if (index >= 0 && index < DATA_BLOCKS){
         return this->fatList[index];
     }

@@ -47,6 +47,7 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
 
     const char *filename = path;
     // Omit starting slash if it exists
+    LOGF("PAth: %s", path);
     if (*path == '/') {
         if (strlen(path) == 1) {
             filename = ".";
@@ -57,6 +58,7 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
 
     FileInfo* fileInfo;
     fileInfo = this->rootDir.get(filename);
+    LOG("Got fileinfo");
     int rootIndex = -1;
     if (fileInfo != nullptr) {
         rootIndex = this->rootDir.getPosition(fileInfo);
@@ -79,6 +81,7 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
 
     statbuf->st_nlink = fileInfo->nlink;
 
+    LOG("Copied infos to statbuffer");
     RETURN(0);
 }
 
@@ -131,7 +134,7 @@ int MyFS::fuseMknod(const char *path, mode_t mode, dev_t dev) {
     info->groupID = getgid();
     info->userID = getuid();
     info->nlink = 2;
-    info->readWriteExecuteRighs = mode;
+    info->readWriteExecuteRights = mode;
 
     if (rootDir.update(*info) < 0) {
         RETURN(-errno)
@@ -149,6 +152,7 @@ int MyFS::fuseUnlink(const char *path) {
     LOGM();
 
     // TODO: Implement this!
+    LOGF("Path: %s", path);
     const char *name = path;
 
     if (*path == '/') {
@@ -158,22 +162,29 @@ int MyFS::fuseUnlink(const char *path) {
             name++;
         }
     }
+    LOGF("Name: %s", name);
 
     FileInfo *info = rootDir.get(name);
+    LOG("got info");
     if (info == nullptr) {
         RETURN(-errno)
     }
 
-    uint16_t nextBlock = info->firstBlock;
+    int nextBlock = info->firstBlock;
+    LOGF("firstblock: %d", nextBlock);
     do {
-        uint16_t currentBlock = nextBlock;
+        int currentBlock = nextBlock;
         nextBlock = fat.get(currentBlock);
         fat.setNextBlock(currentBlock, FAT_EOF);
+        dMap.freeBlock(currentBlock);
     } while (nextBlock != FAT_EOF);
 
-    if (rootDir.deleteEntry(name) < 0) {
+    LOG("unlinked from fat");
+    int ret = rootDir.deleteEntry(name);
+    if (ret < 0) {
         RETURN(-errno)
     }
+    LOG("unlinked");
 
     RETURN(0);
 }
@@ -484,8 +495,8 @@ int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset
         numberOfBlocks = (size + offsetInBlock) / BLOCK_SIZE;
     }
 
-    uint16_t current = info->firstBlock;
-    uint16_t previous = current;
+    int current = info->firstBlock;
+    int previous = current;
 
     //Gets to last block of existing file
     for (int t = 0; t < blockNumber ; t++){
@@ -507,7 +518,7 @@ int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset
     }
 
     int newBlocksCount = numberOfBlocks - alreadyExistingBlocks;
-    uint16_t next = current;
+    int next = current;
 
     //Write new blocks in dmap and fat
     if (newBlocksCount > 0){
