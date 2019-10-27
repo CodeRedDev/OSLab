@@ -521,23 +521,50 @@ int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset
         fat.setEndOfFile(next);
     }
 
-    /*
-    FileInfo info;
-    info.firstBlock = blockNumber;
-
-    char *buffer;
-    if(size > BLOCK_SIZE){
-        std::memcpy(buffer, buf, BLOCK_SIZE);
-    } else{
-        std::memcpy(buffer, buf, size);
+    LOGF("Block to read: %d", numberOfBlocks);
+    for(int i = 0; i < numberOfBlocks; i++) {
+        LOGF("blocks[%d] = %d", i, blocksForFile[i]);
     }
-    info.firstBlock = blockNumber;
 
-    std::memcpy(buffer, buf, BLOCK_SIZE);
-    blockDevice->write(blockNumber, buffer);
-    */
+    char buffer[BLOCK_SIZE];
+    size_t writeSize;
+    if (offsetInBlock + size < BLOCK_SIZE) {
+        writeSize = size;
+    } else {
+        writeSize = BLOCK_SIZE - (size_t)offsetInBlock;
+    }
 
-    RETURN(0);
+    if (openFiles[blockNumber].bufferBlockNumber == blocksForFile[0]) {
+        memcpy(openFiles[blockNumber].buffer + offsetInBlock, buf, writeSize);
+        blockDevice->write(DATA_START + blocksForFile[0], openFiles[blockNumber].buffer);
+    } else {
+        blockDevice->read(DATA_START + blocksForFile[0], buffer);
+        memcpy(buffer + offsetInBlock, buf, writeSize);
+        blockDevice->write(DATA_START + blocksForFile[0], buffer);
+    }
+    for (int j = 1; j < numberOfBlocks - 1; j++) {
+        blockDevice->write(DATA_START + blocksForFile[j], (char*)buf + (BLOCK_SIZE * j) - offsetInBlock);
+    }
+    if (numberOfBlocks > 1) {
+        writeSize = (size + offsetInBlock) % BLOCK_SIZE;
+        if (writeSize == 0) writeSize = BLOCK_SIZE;
+        blockDevice->read(DATA_START + blocksForFile[numberOfBlocks - 1], buffer);
+        memcpy(buffer, buf + ((numberOfBlocks - 1) * BLOCK_SIZE) - offsetInBlock, writeSize);
+        blockDevice->write(DATA_START + blocksForFile[numberOfBlocks - 1], buffer);
+    }
+
+    for (int i = 0; i < NUM_OPEN_FILES; i++) {
+        if (openFiles[i].rootIndex == rootIndex) {
+            openFiles[i].bufferBlockNumber = FAT_EOF;
+        }
+    }
+    if ((uint64_t)info->size < offset + size) {
+        info->size = offset + size;
+        int ret = rootDir.update(*info);
+        if (ret < 0) { RETURN(-errno); };
+    }
+
+    RETURN((int)size);
 }
 
 int MyFS::fuseStatfs(const char *path, struct statvfs *statInfo) {
