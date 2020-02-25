@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
                             return errno;
                         }
                         dMap.setBlockUsed(nextBlock);
+                        std::cout <<"Set MKFS Block: " << nextBlock << std::endl;
                         fileInfo->size += fileStream;
                         
                         currentBlock = nextBlock;
@@ -121,6 +122,7 @@ int main(int argc, char *argv[]) {
                     }
                     
                     fat.setEndOfFile(nextBlock);
+                    dMap.setBlockUsed(nextBlock);
                     ret = rootDir.update(*fileInfo);
                     if (ret < 0) {
                         std::cerr << "RootDirectory: Failed to update info caused by: " << errno << std::endl;
@@ -131,7 +133,11 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
-        
+
+        for(int i = 5220; i < 5240; i ++) {
+            std::cout << fat.get(i) << std::endl;
+        }
+
         FileInfo* rootArray = rootDir.getAll();
         
         ret = deviceHelper.writeDevice(SUPERBLOCK_START, &superBlock, sizeof(superBlock));

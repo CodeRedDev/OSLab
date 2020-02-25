@@ -56,6 +56,7 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
         }
     }
 
+    LOGF("Filename: %s", filename);
     FileInfo* fileInfo;
     fileInfo = this->rootDir.get(filename);
     LOG("Got fileinfo");
@@ -64,7 +65,7 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
         rootIndex = this->rootDir.getPosition(fileInfo);
     }
     if (rootIndex < 0) {
-        std::cerr << "No file found for path: " << *path << std::endl << "Error number:" << errno << std::endl;
+        LOG("No File Path Found");
         RETURN (-errno);
     }
 
@@ -106,17 +107,20 @@ int MyFS::fuseMknod(const char *path, mode_t mode, dev_t dev) {
     }
 
     if (rootDir.createEntry(name, mode) < 0) {
+        LOG("File creation failed");
         RETURN(-errno)
     }
 
     FileInfo *info = rootDir.get(name);
     if (info == nullptr) {
+        LOG("Fileinfo not created with file");
         RETURN(-errno)
     }
 
     uint16_t firstBlock = dMap.getAFreeBlock();
 
-    if (firstBlock < 0) {
+    if (firstBlock < 0 || firstBlock > DATA_BLOCKS) {
+        LOG("First Block is out of bounds");
         RETURN(-errno)
     }
 
@@ -137,6 +141,7 @@ int MyFS::fuseMknod(const char *path, mode_t mode, dev_t dev) {
     info->readWriteExecuteRights = mode;
 
     if (rootDir.update(*info) < 0) {
+        LOG("Updating fileinfo in rootdir failed");
         RETURN(-errno)
     }
 
@@ -175,6 +180,8 @@ int MyFS::fuseUnlink(const char *path) {
     do {
         int currentBlock = nextBlock;
         nextBlock = fat.get(currentBlock);
+        LOGF("Current Block: %d", currentBlock);
+        LOGF("Next Block: %d", nextBlock);
         fat.setNextBlock(currentBlock, FAT_EOF);
         dMap.freeBlock(currentBlock);
     } while (nextBlock != FAT_EOF);
@@ -184,6 +191,7 @@ int MyFS::fuseUnlink(const char *path) {
     if (ret < 0) {
         RETURN(-errno)
     }
+    LOG("deleted from rootdir");
     LOG("unlinked");
 
     RETURN(0);
@@ -451,18 +459,22 @@ int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset
 
     if (blockNumber < 0 || blockNumber >= NUM_DIR_ENTRIES) {
         errno = EBADF;
+        LOG("Blocknumber is ouf of bounds");
         RETURN(-errno)
     }
 
     auto file = openFiles[blockNumber];
     if (file.rootIndex < 0 || !file.write) {
         errno = EBADF;
+        LOG("File can not be written!");
         RETURN(-errno)
     }
 
     int rootIndex = file.rootIndex;
+    LOGF("Rootindex: %d", rootIndex);
     FileInfo *info = rootDir.get(rootIndex);
-    if (info != nullptr) {
+    if (info == nullptr) {
+        LOG("Fileinfo not found");
         RETURN(-errno)
     }
 
@@ -475,6 +487,7 @@ int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset
 
         int ret = fuseWrite(path, writeEmptyBuffer, writeEmptySpace, info->size, fileInfo);
         if (ret < 0) {
+            LOG("Fusewrite failed to execute");
             RETURN(-errno)
         };
     }
@@ -523,11 +536,12 @@ int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset
     //Write new blocks in dmap and fat
     if (newBlocksCount > 0){
         while(newBlocksCount > 0){
-            int nextBlockNo;
-            if((nextBlockNo = dMap.getAFreeBlock()) < 0){
+            int nextBlockNo = dMap.getAFreeBlock();
+            if(nextBlockNo < 0){
                 RETURN(-errno)
             }
             dMap.setBlockUsed(next);
+            LOGF("Set Block used: %d", next);
             fat.setNextBlock(previous, next);
             blocksForFile[numberOfBlocks - newBlocksCount] = next;
             previous = next;
@@ -682,10 +696,13 @@ int MyFS::fuseTruncate(const char *path, off_t offset, struct fuse_file_info *fi
 
 int MyFS::fuseCreate(const char *path, mode_t mode, struct fuse_file_info *fileInfo) {
     LOGM();
-
-    // TODO: Implement this!
-
-    RETURN(0);
+    dev_t dev = 0;
+    int ret = fuseMknod(path, mode, dev);
+    if (ret < 0) {
+        RETURN(ret);
+    }
+    ret = fuseOpen(path, fileInfo);
+    RETURN(ret);
 }
 
 void MyFS::fuseDestroy() {
@@ -745,8 +762,8 @@ int MyFS::fuseGetxattr(const char *path, const char *name, char *value, size_t s
 int MyFS::initializeFilesystem(char *containerFile) {
     if (blockDevice->open(containerFile) == 0) {
         bool *dMapBlocks = new bool[DATA_BLOCKS];
-        uint16_t *fatList = new uint16_t[DATA_BLOCKS];
-        FileInfo *rootArray = new FileInfo[ROOT_ARRAY_SIZE];
+        auto *fatList = new int[DATA_BLOCKS];
+        auto *rootArray = new FileInfo[ROOT_ARRAY_SIZE];
 
         int ret = 0;
         ret = this->blockDeviceHelper.readDevice(SUPERBLOCK_START, &this->superBlock, sizeof(this->superBlock));

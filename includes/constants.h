@@ -11,6 +11,7 @@
 #define NUM_OPEN_FILES 64
 #define DATA_BLOCKS 62500
 #define FAT_EOF -1
+#define FREE_FAT_BLOCK -2
 
 /**
  * How to get component block size/count. Example for FAT:
@@ -31,7 +32,7 @@
  */
  
 #define SUPERBLOCK_SIZE 1
-#define FAT_SIZE 255
+#define FAT_SIZE 255 * 2
 #define DMAP_SIZE 123 
 #define ROOTDIR_SIZE 39 // FileInfo struct has size of 301 (rootdir holds array of 65 FileInfo) => 19565byte => 38,212... => 39 blocks
 

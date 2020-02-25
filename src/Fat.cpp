@@ -1,8 +1,8 @@
 #include "Fat.h"
 
 Fat::Fat() {
-    for (int i = 0; i < DATA_BLOCKS; i++) {
-        fatList[i] = FAT_EOF;
+    for (int & i : fatList) {
+        i = FREE_FAT_BLOCK;
     }
 }
 
@@ -18,11 +18,11 @@ int Fat::setNextBlock(int currentBlock, int nextBlock) {
     return 0;
 }
 
-void Fat::setEndOfFile(uint16_t block) {
+void Fat::setEndOfFile(int block) {
     fatList[block] = FAT_EOF;
 }
 
-int Fat::getNextBlock(uint16_t currentBlock) {
+int Fat::getNextBlock(int currentBlock) {
     return this->fatList[currentBlock];
 }
 
@@ -41,7 +41,7 @@ int* Fat::getFatList() {
     return this->fatList;
 }
 
-int Fat::get(uint16_t index){
+int Fat::get(int index){
     if (index >= 0 && index < DATA_BLOCKS){
         return this->fatList[index];
     }
@@ -51,12 +51,12 @@ int Fat::get(uint16_t index){
 /**
  * Sets the internal class instance fatList to the same as the parameter fatList
  *
- * @param fatList
+ * @param list
  * @return void
  */
-void Fat::setFat(uint16_t* fatList)
+void Fat::setFat(const int* list)
 {
     for (int i = 0; i < DATA_BLOCKS; i++){
-        this->fatList[i] = *(fatList + i);
+        this->fatList[i] = *(list + i);
     }
 }
