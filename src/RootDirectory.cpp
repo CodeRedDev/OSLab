@@ -38,12 +38,25 @@ void RootDirectory::setAll(FileInfo* fileInfo) {
     }
 }
 
+int RootDirectory::deleteEntry(int index) {
+    LOG("deleteEntry in rootdir")
+    if (index < ROOT_ARRAY_SIZE && index > 0) {
+        DIR_STATS.size -= rootArray[index].size;
+        rootArray[index] = {};
+        rootArray[index].size = -1;
+        LOGF("deleted in rootdir enty with index: %d", index)
+        return 0;
+    }
+    errno = ENOENT;
+    return -1;
+}
+
 // deletes the fileInfo with the given name.
 int RootDirectory::deleteEntry(const char *name) {
     LOG("deleteEntry in rootdir")
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
         LOGF("Rootdir %d: %s",i, name)
-        if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, name) == 0) {
+        if (rootArray[i].size >= 0 && strcmp(name, rootArray[i].name) == 0) {
             DIR_STATS.size -= rootArray[i].size;
             rootArray[i] = {};
             rootArray[i].size = -1;
@@ -110,7 +123,7 @@ int RootDirectory::rename(const char *oldname, const char *newname) {
 // get the fileInfo of the given file, returns a number that can be used as a file descriptor
 FileInfo* RootDirectory::get(const char* name) {
     for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
-        if (rootArray[i].size >= 0 && strcmp(rootArray[i].name, name) == 0) {
+        if (strcmp(rootArray[i].name, name) == 0) {
             return &rootArray[i];
         }
     }

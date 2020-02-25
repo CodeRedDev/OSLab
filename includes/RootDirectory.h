@@ -30,6 +30,7 @@ public:
     int getPosition(FileInfo* fileInfo);
     int update(FileInfo fileInfo);
     int deleteEntry(const char* name);
+    int deleteEntry(int index);
     int createEntry(const char* name, mode_t mode);
     int createEntry(const char* name);
     int rename (const char* oldname, const char* newname);

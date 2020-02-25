@@ -59,11 +59,15 @@ int MyFS::fuseGetattr(const char *path, struct stat *statbuf) {
     LOGF("Filename: %s", filename);
     FileInfo* fileInfo;
     fileInfo = this->rootDir.get(filename);
-    LOG("Got fileinfo");
     int rootIndex = -1;
     if (fileInfo != nullptr) {
+        LOG("Got fileinfo");
         rootIndex = this->rootDir.getPosition(fileInfo);
+    }else{
+        LOG("No fileinfo found");
     }
+
+
     if (rootIndex < 0) {
         LOG("No File Path Found");
         RETURN (-errno);
@@ -170,10 +174,11 @@ int MyFS::fuseUnlink(const char *path) {
     LOGF("Name: %s", name);
 
     FileInfo *info = rootDir.get(name);
-    LOG("got info");
     if (info == nullptr) {
         RETURN(-errno)
-    }
+    }else{
+        LOG("got info");
+   }
 
     int nextBlock = info->firstBlock;
     LOGF("firstblock: %d", nextBlock);
@@ -453,6 +458,7 @@ int MyFS::fuseRead(const char *path, char *buf, size_t size, off_t offset, struc
 
 int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fileInfo) {
     LOGM();
+    LOGF("Write to path: %s", path);
 
     // TODO: Implement this!
     auto blockNumber = (uint16_t) fileInfo->fh;
@@ -536,8 +542,8 @@ int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset
     //Write new blocks in dmap and fat
     if (newBlocksCount > 0){
         while(newBlocksCount > 0){
-            int nextBlockNo = dMap.getAFreeBlock();
-            if(nextBlockNo < 0){
+            next = dMap.getAFreeBlock();
+            if(next < 0){
                 RETURN(-errno)
             }
             dMap.setBlockUsed(next);
@@ -551,9 +557,9 @@ int MyFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset
         fat.setEndOfFile(next);
     }
 
-    LOGF("Block to read: %d", numberOfBlocks);
+    LOGF("Blocks to read: %d", numberOfBlocks);
     for(int i = 0; i < numberOfBlocks; i++) {
-        LOGF("blocks[%d] = %d", i, blocksForFile[i]);
+        LOGF("block[%d] = %d", i, blocksForFile[i]);
     }
 
     char buffer[BLOCK_SIZE];
@@ -655,7 +661,7 @@ MyFS::fuseReaddir(const char *path, void *buf, fuse_fill_dir_t filler, off_t off
     LOGM();
 
     // Only read home directory
-    if (strcmp("/", path) == 0) {
+    if (*path == '/') {
         // Add fs directories to the mounted directory
         for (int i = 0; i < ROOT_ARRAY_SIZE; i++) {
             if (this->rootDir.exists(i)) {
